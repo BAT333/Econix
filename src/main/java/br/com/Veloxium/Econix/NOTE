@@ -1,0 +1,369 @@
+ponto chave na arquitetura em microServiços,
+vamos supor que nos tem varios micro serviço separado
+nem back end e nem front pode saber todos esse endereço para saber todos esse endereço
+para isso usa service discorver, ele vai ter toda instancias endereço de todos micros serviço que tem la
+
+
+ para fazer isso vamo usar Spring cloud Netflix,
+ para criar pelo spring initilizr
+
+
+EUREKA SERVE
+
+
+no application.properties vamos configura tudo nele do service
+para tudo no serviço de descoberta recomendado que ele tenha uma porta fixa
+server.port=8081
+
+
+
+vamos fazer add duas dependecia, por que projeto pode atuar tanto quanto servidor
+quanto projeto
+mas vamos criar como um server so como isso
+eureka.client.register-with-eureka=false
+eureka.client.fetch-registry=false
+
+como trocou endereço para 8081, tem dizer como vai ser url
+eureka.client.serviceUrl.defaultZone=http://localhost:8081/eureka
+
+
+server.port=8081
+
+spring.application.name=server
+eureka.client.register-with-eureka=false
+eureka.client.fetch-registry=false
+eureka.client.serviceUrl.defaultZone=http://localhost:8081/eureka
+-----------------------------------------------------------------------------------------------------------------------
+@EnableEurekaServer
+isso vc coloca no Application para indicar que vc vai trabalhar com EurekaServer e que é serve
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------
+AGORA VC TEM QUE ARRUMAR OUTRO LADO PARA QUE COMUNIQUE COM SERVER, MOSTRA PARA SERVI CLIENTES DELE AS APLICAÇÃO QUE VAI ESTA
+PARA MICRO SERVIÇOS
+PRIMEIRO DE TUDO VC TEM ADD ESSA DEPENDENCIA
+
+<spring-cloud.version>2022.0.3</spring-cloud.version>
+
+<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+		</dependency>
+
+	</dependencies>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+--------------------------------------------------------------------------------------------------------------------------------------------------
+QUE NO FINAL FICARA ASSIM
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>3.3.0</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>br.com.Veloxium</groupId>
+	<artifactId>Econix</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>Econix</name>
+	<description>MS de pagamento da Veloxium</description>
+	<properties>
+		<java.version>21</java.version>
+		<spring-cloud.version>2022.0.3</spring-cloud.version>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-mysql</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>com.mysql</groupId>
+			<artifactId>mysql-connector-j</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+		</dependency>
+
+	</dependencies>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
+---------------------------------------------------------------------------------------------------------
+E NO APPLICATION NO LADO DO CLIENTE USA ESSA APLICAÇÃO NA CLASS PRINCIPAL DE RODAR
+@EnableDiscoveryClient
+--------------------------------------------------------------------------------------------------------------------------
+AGORA AINDA DO LADO CLIENT, NO APPLICATION.PROPERTIES VAMOS CONFIGURA
+PRIMEIRO DE UM NOME
+spring.application.name=Econix
+
+DEPOIS A URL DEFAULTZONE POR QUE VAI SER AI QUE VAI RECEBER REQUISUÇÃO
+eureka.client.serviceUrl.defaultZone=http://localhost:8081/eureka
+MESMA DO EUREKA
+
+POR FIM VAMOS DEIXA EURECA MESMO DECIDIR A PORTA QUE ELE VAI USAR DETE JEITO
+server.port=0.
+-------------------------------------------------------------------------------------------------------------
+ Incluindo o Gateway
+ para que serve isso, sere para centralizar serviço e endponit, um ponto unico de entrada de url
+
+"Gateway - Spring Cloud Routing" e "Eureka Discovery Client - Spring Cloud Discovery".
+
+
+CONFIGURAÇÃO
+APPLICATION.PROPERTIES
+
+spring.application.name=Gateway
+server.port=8082
+eureka.client.serviceUrl.defaultZone=http://localhost:8081/eureka
+
+OQ DE FATO VAI AJUDAR FAZER A DESCOBRERTA FUNCIONAR VAI SER ESSE DOIS COMANDOS
+
+spring.cloud.gateway.discovery.locator.enabled=true
+spring.cloud.gateway.discovery.locator.lowerCaseServiceId=true
+
+
+E ULTIMO É QUE URL VAI TAR TUDO EM LOWERCASE
+
+
+E NO APPLICATIONS TEM COLOCAR
+@EnableDiscoveryClient
+
+como chamar
+localhost:8082/nomedomicroserviço/oqvcquerfazerele
+ex
+http://localhost:8082/gateway/econix/pay
+tem usar nome da aplixação gateway
+
+
+
+
+OBS USAR PADRÃO spring-cloud-starter-gateway  -> NA DEPEDENCIA
+NÃO O spring-cloud-starter-gateway-MVC QUE ESTA DANDO ERRO
+------------------------------------------------------------------------------------------------------------------------------------
+BALECEAMENTO DE CARGA
+
+BASTA ADD ISSO
+eureka.instance.instance-id=${spring.application.name}:${random.int}
+VAI ADD UMA INSTANCIA NOVA
+PARA FAZER RODAR OUTRAS RUN BASTA
+ADD
+& "c:\alura-food\pedidos\mvnw.cmd" spring-boot:run -f "c:\alura-food\pedidos\pom.xml"
+NOME QUE TA NA PASTA PMDE ESTA PASSANDO ATE CHAGAR NO POM
+CAMINHO QUE ESTA APLICAÇÃO
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+Spring Feign
+para fazer a comunicação de ms para outro micro serviço
+primeiro de tudo add essa notação
+@EnableFeignClients
+no serviço que vc quer vire cliente que que ajuntar com outro micro serviço
+
+e depois essa dependencia
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+
+
+
+como faz para usar
+primeiro cria uma interface que vai usar, por que isso não nada a mais que uma
+requisção
+
+e add anotação encima dele de
+
+@FeignClient("")
+add nome dele, que é exatamente nome que vc deu para seu micro Serviço
+
+
+@FeignClient("Econix")
+
+
+depois request que vc quer fazer
+
+
+@RequestMapping(method = RequestMethod.PUT, value = "/pay/status/{id}");
+
+
+passar url que vc quer acessar
+
+
+E ONDE ULTILIZAR ISSO
+na service aonde vc esta ultilizando
+ex:
+vc faz essa configuração no restaurante para ele ter como pago realizado, e pagamento ms diferente
+ai vc vai configura o feign no restaurante e vai ultilizartudo no service do restaurante
+ai se chama essa inteface na sua service ou controller, q de resto vai fazer tudo sozinho
+
+e pode retorna coisas caso se precise
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Circuit breaker e fallback
+
+colocando a dependencia
+<!-- https://mvnrepository.com/artifact/io.github.resilience4j/resilience4j-spring-boot2 -->
+<dependency>
+    <groupId>io.github.resilience4j</groupId>
+    <artifactId>resilience4j-spring-boot2</artifactId>
+    <version>2.2.0</version>
+</dependency>
+
+
+e outra
+
+
+<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-aop -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-aop</artifactId>
+    <version>3.3.0</version>
+</dependency>
+
+TUDO ISSO NO CONTROLLER
+
+circuit
+serve para quando uma parte do ms esta fora do ar para fechar ele ou tomar a devida descição para colocar ele no ar
+novamente etc
+
+oq precisa fazer, no controlador na pasta http
+
+@CircuitBreaker()
+
+de nome para ele
+e oq ele vai fazer caso de eerro
+@CircuitBreaker(name = "nomeColocado", fallbackMethod = "")
+
+e no applications.properies configura para fazer tal situação
+
+ESSE QUE VAI PASSAR PARA ABERTO OU FECHADO CIRCUIT BASEADO NAS ULTIMAS REQUISIÇÃO
+resilience4j.circuitbreaker.instances.nomeColocado.slidingWindowSize: 3
+
+MINIMO DE CHAMADA QUE ELE PRECISA FAZER ATE ENTRA EM FECHAMANETO ETC
+resilience4j.circuitbreaker.instances.nomeColocado.minimumNumberOfCalls: 2
+
+UMA VEZ QUE PASSOU PARA ELE PARA ABERTO, QUANTO TEMPO VAI MANTER ABERTO
+resilience4j.circuitbreaker.instances.nomeColocado.waitDurationInOpenState: 50s
+
+
+OQ VAI FAZER SE DEU ERRO
+@CircuitBreaker(name = "nomeColocado", fallbackMethod = "OQFAZER")
+
+ESSE METODO TEM TER MESMO NOME MESMO TIPO DE RETORNO, E MESMO PARAMENTROS, E EXCEPRIO E APENA UM PARAMETRO ADD
+
+public void OQFAZER(Long id , Exception e){
+this.service -> logica dentro chama sem chamado com integração
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+https://spring.io/ TODA DOCUMENTAÇÕES DO SPRING BOOT
