@@ -2,12 +2,12 @@ package br.com.Veloxium.Econix.Controller;
 
 import br.com.Veloxium.Econix.Repository.PayRepository;
 import br.com.Veloxium.Econix.Service.PayService;
+import br.com.Veloxium.Econix.Service.core.Services;
 import br.com.Veloxium.Econix.domain.Payment;
-import br.com.Veloxium.Econix.model.DataPayDTO;
-import br.com.Veloxium.Econix.model.RegisterDataPayDTO;
-import br.com.Veloxium.Econix.model.UpdateDataPayDTO;
+import br.com.Veloxium.Econix.model.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -25,12 +25,11 @@ public class PayController {
     private PayService service;
     @GetMapping
     public ResponseEntity<Page<DataPayDTO>> allPay(@PageableDefault Pageable pageable){
-        return this.service.allPay(pageable);
-
+        return this.service.findall(pageable);
     }
     @GetMapping("{id}")
     public ResponseEntity<DataPayDTO> payID(@PathVariable Long id){
-        return this.service.payID(id);
+        return this.service.findByID(id);
     }
     @PutMapping("{id}")
     @Transactional
@@ -51,7 +50,7 @@ public class PayController {
     @PutMapping("status/{id}")
     @Transactional
     public ResponseEntity<DataPayDTO> pay(@PathVariable Long id){
-        return this.service.pay(id);
+            return this.service.pay(id);
     }
 
 
