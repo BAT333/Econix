@@ -353,7 +353,16 @@ this.service -> logica dentro chama sem chamado com integração
 
 
 
+Comunicação assíncrona é aquela que não acontece em tempo real. O emissor envia a mensagem e o receptor
+pode acessá-la e respondê-la quando desejar. O modelo é mais conveniente para quem recebe, porém requer
+objetividade, já que não é possível tirar dúvidas no mesmo momento.
 
+
+
+
+Comunicação síncrona é aquela em que as pessoas interagem em tempo real,
+envolvidos na troca simultaneamente. Já na assíncrona, as respostas não são
+imediatas, sendo enviadas e recebidas em momentos diferentes
 
 
 

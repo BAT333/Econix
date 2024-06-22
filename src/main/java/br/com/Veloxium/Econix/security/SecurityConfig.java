@@ -20,7 +20,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity security) throws Exception {
         return security.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(https->https.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authori->authori.anyRequest().hasRole("ADMIN"))
+                .authorizeHttpRequests(authori->authori.anyRequest().permitAll())
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
 
