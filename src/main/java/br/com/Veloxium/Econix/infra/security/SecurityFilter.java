@@ -1,6 +1,6 @@
-package br.com.Veloxium.Econix.security;
+package br.com.Veloxium.Econix.infra.security;
 
-import br.com.Veloxium.Econix.http.LoginFeing;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,17 +20,23 @@ import java.util.List;
 
 @Component
 public class SecurityFilter extends OncePerRequestFilter {
-    @Autowired
+   /* @Autowired
     private LoginFeing feing;
+
+    */
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         var tokenJWT =  this.getToken(request);
-        var list = feing.auth(tokenJWT);
-        if(list.isEmpty())throw new RuntimeException("USER SEM PERMISSON");
-        var granted = this.grand(list);
-        var usetAuthentications = new UsernamePasswordAuthenticationToken(null, null, granted);
-        SecurityContextHolder.getContext().setAuthentication(usetAuthentications);
+        if(tokenJWT != null){
+          /*  var list = feing.auth(tokenJWT);
+            if(list.isEmpty())throw new RuntimeException("USER SEM PERMISSON");
+            var granted = this.grand(list);
+            var usetAuthentications = new UsernamePasswordAuthenticationToken(null, null, granted);
+            SecurityContextHolder.getContext().setAuthentication(usetAuthentications);
+
+           */
+        }
 
 
         filterChain.doFilter(request,response);
@@ -49,6 +55,6 @@ public class SecurityFilter extends OncePerRequestFilter {
         if(token != null){
             return token.replace("Bearer ","");
         }
-        throw  new RuntimeException("ERRO TOKEN");
+        return null;
     }
 }

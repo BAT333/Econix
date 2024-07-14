@@ -1,0 +1,765 @@
+=============================================iniciando projeto no conteiner===========================================================
+primeiro de tudo que vc fez service, e Gateway vamos desativar ele por um tempo para fazer deploy
+agora vamos Utilizando Docker para fazer isolamento da aplicação
+vamos fazer Dockerfile
+https://spring.io/guides/gs/spring-boot-docker
+aqui tem as instrução incial
+como criar docker file
+precisa criar um arquivo package da nossa aplicação so aperta
+em M no canto no nome da aplicação no casso econix e package
+depois se vai no docker hub  e cria um repositorio
+no docker hup
+
+mas para agora no dockerfile tem ter uma mudança
+FROM eclipse-temurin:21-jdk-alpine as builder
+WORKDIR application
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+COPY src src
+RUN ./mvnw package -DskipTests
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} application.jar
+RUN java -Djarmode=layertools -jar application.jar extract
+
+
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR application
+COPY --from=builder application/dependencies/ ./
+COPY --from=builder application/spring-boot-loader/ ./
+COPY --from=builder application/snapshot-dependencies/ ./
+COPY --from=builder application/application/ ./
+
+usar esse para fazer deploy colocar no docker hub
+vc criar um repositorio de nome, vai no seu docker hub instalado no seu computador
+dar push to hub, ele vai ser repositorio publico la no seu docker hub
+=========================================================================================================================================
+FROM eclipse-temurin:21-jdk-alpine
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
+=================================================================================================================================================
+FROM eclipse-temurin:21-jdk-alpine as builder
+WORKDIR application
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+COPY src src
+RUN ./mvnw package -DskipTests
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} application.jar
+RUN java -Djarmode=layertools -jar application.jar extract
+
+
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR application
+COPY --from=builder application/dependencies/ ./
+COPY --from=builder application/spring-boot-loader/ ./
+COPY --from=builder application/snapshot-dependencies/ ./
+COPY --from=builder application/application/ ./
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+Caso você esteja utilizando o Docker Desktop, pode iniciar o container com o MySQL a partir do menu Home, conforme a imagem na sequência:
+
+alt text: Caixa na cor branca com a logo do golfinho que representa o MySQL. Na caixa, aparece a mensagem “A widely used, open-source relational database management system (RDBMS)” e os botões “View” e “Run another”
+
+Se preferir criar por linha de comando, mapeando para a mesma porta 49153 que esse atalho mapeia e configurando a mesma senha “mysqlpw”, você pode digitar o seguinte:
+
+docker run -d --name mysqldb -p 49153:3306 -e "MYSQL_ROOT_PASSWORD=mysqlpw" mysqlCOPIAR CÓDIGO
+Lá no arquivo application.properties, vamos alterar a string de conexão, inserindo da seguinte forma:
+spring.datasource.url=jdbc:mysql://root:mysqlpw@localhost:49153/alurafood-pedidos?createDatabaseIfNotExist=trueCOPIAR CÓDIGO
+Execute a aplicação e confirme se está funcionando corretamente. Pode abrir o Postman e testar a inclusão de um pedido, conforme a imagem abaixo:
+alt text: Tela do postman, com fundo preto, indicando uma requisição com método post, e no campo body a descrição de um arquivo JSON com três itens
+
+Depois de fazer o teste utilizando os métodos POST e GET, você pode parar a aplicação.
+
+Agora, crie o arquivo Dockerfile com as instruções de como gerar a imagem. Seguiremos o padrão já disponibilizado na documentação do Spring, trocando apenas a versão da jdk.
+
+FROM openjdk:17-alpine
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]COPIAR CÓDIGO
+Gere o arquivo .jar do projeto através do comando mvn clean package.
+
+Abra o terminal pela própria IDE, que já estará na pasta raiz do projeto. Digite o comando para construir a imagem da sua aplicação:
+
+docker build -t  <seu_repositorio_no_docker_hub>/pedidos-ms:<tag> .COPIAR CÓDIGO
+Depois faça o push da imagem para o Docker Hub, através do Docker Desktop ou do comando descrito no próprio Hub, por exemplo:
+
+docker push jacquelineoliveira/pedidos-ms:tagnameCOPIAR CÓDIGO
+Pronto! Com isso você já conseguirá rodar sua aplicação a partir de um container.
+=================================================================================================================================================================================
+vamos configura toda nossa infra pelo cdk
+cria cli, depois colocar user depois instalar node e depois o cdk
+pela nossa linguem que domina
+
+cdk init --language java
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+para criar uma infra vamos separar as stacks para nos ter possibilidade de mudar tudo depois por que
+se criar tudo junto alguma hora quer mudar algo esta tudo muito acoplado
+nome desta clssa vai ser
+AluraVpStack
+public class AluraVpStack extends Stack {
+    public AluraVpStack(final Construct scope, final String id) {
+        this(scope, id, null);
+    }
+
+    public AluraVpStack(final Construct scope, final String id, final StackProps props) {
+        super(scope, id, props);
+
+        Vpc vpc = Vpc.Builder.create(this, "AluraVpc")
+                .maxAzs(3)
+                .build();
+    }
+}
+esse codigo dentro dela
+vamos criar uma vpc dar scopo que no caso proria class
+e outro que esta com nome AluraVpc é id
+
+
+depois vamos chamar para criar essa vpc  no AluraAwsInfraApp
+
+public class AluraAwsInfraApp {
+    public static void main(final String[] args) {
+        App app = new App();
+
+       new AluraVpStack(app,"vpc");
+
+        app.synth();
+    }
+}
+
+Temos que fazer o bootstrapping no primeiro momento que for criar essa class para setar a região
+------------------------------------------------------------------------------------------------------------------------------------------------
+
+agora para criar o cluster
+vamos duplicar a classe padrãoe fazer codifo do clust
+
+
+cluster.addDependency(vpc); AQUI FALA QUE CLUSTER TEM UMA DEPENDENCIA PRIMEIRO QUE VPC
+
+
+CLASS DO CLUSTER FICOU ASSIM
+package com.myorg;
+
+import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.ec2.Vpc;
+import software.amazon.awscdk.services.ecs.Cluster;
+import software.constructs.Construct;
+// import software.amazon.awscdk.Duration;
+// import software.amazon.awscdk.services.sqs.Queue;
+
+public class AluraClusterStack extends Stack {
+    public AluraClusterStack(final Construct scope, final String id, final Vpc vpc) {
+        this(scope, id, null,vpc);
+    }
+
+    public AluraClusterStack(final Construct scope, final String id, final StackProps props,final Vpc vpc) {
+        super(scope, id, props);
+
+        Cluster cluster = Cluster.Builder.create(this, "AluraCluster")
+                .vpc(vpc)
+                .build();
+    }
+}
+
+CLASS DO VPC FICOU ASSIM PARA DECLARA ELA
+
+
+package com.myorg;
+
+import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.ec2.Vpc;
+import software.constructs.Construct;
+
+
+public class AluraVpStack extends Stack {
+    private Vpc vpc;
+    public AluraVpStack(final Construct scope, final String id) {
+        this(scope, id, null);
+    }
+
+    public AluraVpStack(final Construct scope, final String id, final StackProps props) {
+        super(scope, id, props);
+
+         vpc = Vpc.Builder.create(this, "Aluravpc")
+                .maxAzs(3)
+                .build();
+    }
+
+    public Vpc getVpc() {
+        return vpc;
+    }
+}
+
+
+
+CLASS QUE FAZ DEPLOY E RODA TUDO FICOU ASSIM
+
+
+package com.myorg;
+
+import software.amazon.awscdk.App;
+import software.amazon.awscdk.Environment;
+import software.amazon.awscdk.StackProps;
+
+import java.util.Arrays;
+
+public class AluraAwsInfraApp {
+    public static void main(final String[] args) {
+        App app = new App();
+
+       var vpc =new AluraVpStack(app,"vpc");
+       var cluster =new AluraClusterStack(app,"cluster",vpc.getVpc());
+       cluster.addDependency(vpc);
+
+        app.synth();
+    }
+}
+
+=================================================================================================================================================
+vamos criar lord balance para balanceamento de carga, vamos fazer mesma coisa que fizemos na vpc
+para deixar cluster acessavel
+
+e vamos criar serviço
+
+
+CLUSTER FICOU ASSIM
+package com.myorg;
+
+import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.ec2.Vpc;
+import software.amazon.awscdk.services.ecs.Cluster;
+import software.constructs.Construct;
+// import software.amazon.awscdk.Duration;
+// import software.amazon.awscdk.services.sqs.Queue;
+
+public class AluraClusterStack extends Stack {
+    private Cluster cluster;
+    public AluraClusterStack(final Construct scope, final String id, final Vpc vpc) {
+        this(scope, id, null,vpc);
+    }
+
+    public AluraClusterStack(final Construct scope, final String id, final StackProps props,final Vpc vpc) {
+        super(scope, id, props);
+
+         cluster = Cluster.Builder.create(this, "AluraCluster")
+                .vpc(vpc)
+                .build();
+    }
+
+    public Cluster getCluster() {
+        return cluster;
+    }
+}
+
+------------------------------------------------------------------------------------------------------
+ASSIM FICOU A SERVICE
+package com.myorg;
+
+import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.ecs.Cluster;
+import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.patterns.ApplicationLoadBalancedFargateService;
+import software.amazon.awscdk.services.ecs.patterns.ApplicationLoadBalancedTaskImageOptions;
+import software.constructs.Construct;
+// import software.amazon.awscdk.Duration;
+// import software.amazon.awscdk.services.sqs.Queue;
+
+public class AluraServiceStack extends Stack {
+    public AluraServiceStack(final Construct scope, final String id,final Cluster cluster) {
+        this(scope, id, null,cluster);
+    }
+
+    public AluraServiceStack(final Construct scope, final String id, final StackProps props,final Cluster cluster) {
+        super(scope, id, props);
+
+        // Create a load-balanced Fargate service and make it public
+        ApplicationLoadBalancedFargateService.Builder.create(this, "aluraService ")
+                .cluster(cluster)           // Required
+                .cpu(512)                   // Default is 256
+                .desiredCount(1)            // Default is 1
+                .listenerPort(8080)         //a porta que vai ta escultando aplicação
+                .assignPublicIp(true)       // para conseguir acessar sua aplicação externamente
+                .taskImageOptions(
+                        ApplicationLoadBalancedTaskImageOptions.builder()
+                                .image(ContainerImage.fromRegistry("jacquelineoliveira/ola:1.0"))
+                                .containerPort(8080)    // a porta do conteiner
+                                .containerName("APP_OLAR")   // nome do conteiner
+                                .build())
+                .memoryLimitMiB(1024)       // Default is 512
+                .publicLoadBalancer(true)   // Default is false
+                .build();
+=======================================================================================================================================
+ASSIM FICOU CLASS PRINCIPAL
+
+package com.myorg;
+
+import software.amazon.awscdk.App;
+import software.amazon.awscdk.Environment;
+import software.amazon.awscdk.StackProps;
+
+import java.util.Arrays;
+
+public class AluraAwsInfraApp {
+    public static void main(final String[] args) {
+        App app = new App();
+
+        var vpc =new AluraVpStack(app,"vpc");
+        var cluster =new AluraClusterStack(app,"cluster",vpc.getVpc());
+        var service = new AluraServiceStack(app,"service",cluster.getCluster());
+        cluster.addDependency(vpc);
+        service.addDependency(cluster);
+
+        app.synth();
+    }
+}
+
+E FAZER DEPLOY CDK DEPLOY SERVICE VPC CLUSTER
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+PARA FAZER O BANCO DE DADOS COM AWS ESPECIFICAMENTE O MYSQL
+PRIMEIRO VAMOS COPIAR CLASS PADRÃO PARA NÃO FICAR NÃO TER ALTO ACOPLAMENTO
+COMO VAI FICAR CODIGO DELA
+O primeiro será o código de como criar um CFN Parameter (parâmetro do CloudFormation). Esse parâmetro vai permitir que, na hora do deploy, indiquemos qual a senha para acessar esse banco.
+//código omitido
+
+CfnParameter senha = CfnParameter.Builder.create (scope: this, id: "senha")
+        .type("String")
+        .description("Senha do database pedidos-ms")
+        .build();
+
+
+é a parte de segurança, o security group da VPC padrão que foi criada.
+
+Então, vamos inserir um código aqui para ele usar o security group da VPC.
+
+    public AluraRdsStack(final Construct scope, final String id, final Vpc vpc) {
+            this(scope, id, null, vpc);
+    }
+
+    public AluraRdsStack(final Construct scope, final String id, final StackProps props, final Vpc vpc) {
+            super(scope, id, props);
+
+Em seguida, colocaremos um novo comando logo abaixo do código do CFN Parameter. Este é o comando para inserir o security group:
+
+        ISecurityGroup iSecurityGroup = SecurityGroup.fromSecurityGroupId(scope: this, id, vpc.getVpcDefaultSecurityGroup());
+        iSecurityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(port: 3306));
+
+        ISecurityGroup iSecurityGroup = SecurityGroup.fromSecurityGroupId(this, id, vpc.getVpcDefaultSecurityGroup());-> pegar as configuração de seguraça padrão da vpc
+                iSecurityGroup.addIngressRule(Peer.anyIpv4(), Port.tcp(port: 3306));-> regra de entra qualquer ip dentro daquela aplicação na porta 3306
+
+
+
+
+
+                Agora criaremos a instância do banco de dados, a database instance, onde passaremos qual é a engine, qual é a VPC, o nome que usaremos para identificar a instância. Para isso, usaremos este código:
+
+                        DatabaseInstance database = DatabaseInstance.Builder
+                                .create(scope: this, id: "Rds-pedidos")
+                                .instanceIdentifier("alura-aws-pedido-db")
+                                .engine(DatabaseInstanceEngine.mysql(MySqlInstanceEngineProps.builder()
+                                        .version(MysqlEngineVersion.VER_8_0)
+                                        .build()))
+                                .vpc(vpc)
+                                .credentials(Credentials.fromUsername(username: "admin",
+                                        CredentialsFromUsernameOptions.builder()
+                                                .password(SecretValue.unsafePlainText(senha.getValueAsString()))
+                                                .build()))
+                                .instanceType(InstanceType.of(InstanceClass.BURSTABLE2, InstanceSize.MICRO))
+                                .multiAz(false)
+                                .allocatedStorage(10)
+                                .securityGroups(Collections.singletonList(iSecurityGroup))
+                                .vpcSubnets(SubnetSelection.builder()
+                                        .subnets(vpc.getPrivateSubnets())
+                                        .build())
+                                .build();
+Agora vamos comentar linha a linha. Então, criamos a classe DatabaseInstance, e usaremos o mesmo padrão builder para indicar as configurações que precisamos.
+
+Informamos o escopo, o id, que chamei de Rds-pedidos e a identificação da instância definimos como alura-aws-pedido-db.
+
+E em seguida, no .engine, indicamos qual é o tipo do banco, coloquei DatabaseInstanceEngine.mysql. Depois faço o builder dele e informo qual a versão: VER_8_0. Ele tem várias versões, eu coloquei na 8.0, mas poderia ser qualquer uma dessas que aparecem listadas ao clicarmos "Ctrl + Espaço".
+
+Passamos também qual é a VPC, que é a VPC que ele está recebendo no construtor.
+
+Em seguida, passamos as credenciais. Estamos fixando que será usuário "admin" e pegaremos o parâmetro senha como string, senha.getValueAsString().
+
+O tipo da instância é BURSTABLE2 e o tamanho é micro, InstanceSize.MICRO. Como queremos usar de forma gratuita, usaremos o menor tamanho possível.
+
+Lembra daquela zona de disponibilidade? Que no console vimos que ao marcar o Free tier ela ficou inativa? Passei ela como false, .multiAZ(false).
+
+O tamanho padrão de armazenamento deixamos em 10, .allocatedStorage(10).
+
+Em seguida, adicionei as configurações do grupo de segurança, pedindo para pegar todos os security groups da VPC. E o mesmo procedimento para as sub-redes, estamos pegando todos da VPC.
+
+Feito isso, finalizamos esse bloco de código com o .build().
+
+Ainda faltam duas coisas. Precisaremos passar para a aplicação qual é o endpoint, ou seja, onde está o banco de dados, e qual é a senha dele.
+
+Já que vamos passar essa senha por parâmetro na hora do deploy, as aplicações precisam saber como se conectar a esse banco, geralmente passamos a URL do banco, usuário e senha.
+
+Como coloquei usuário fixo como "admin", esse não preciso colocar. Vou deixar fixo lá como "admin" também. Mas o endpoint, que pode mudar cada vez que fizermos um deploy ou trocar alguma configuração, devemos fazer um output disso.
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Para isso, usaremos CloudFormation output:
+
+        CfnOutput.Builder.create(scope: this, id: "pedidos-db-endpoint")
+                .exportName("pedidos-db-endpoint")
+                .value(database.getDbInstanceEndpointAddress())
+                .build();
+
+        CfnOutput.Builder.create(scope: this, id: "pedidos-db-senha")
+                .exportName("pedidos-db-senha")
+                .value(senha.getValueAsString())
+                .build();
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    public static void main(final String[] args) {
+        App app = new App();
+
+        var vpc =new AluraVpStack(app,"vpc");
+        var cluster =new AluraClusterStack(app,"cluster",vpc.getVpc());
+        cluster.addDependency(vpc);
+        var aluraRds = new AluraRDSStack(app,"RDS",vpc.getVpc());
+        aluraRds.addDependency(vpc);
+        var service = new AluraServiceStack(app,"service",cluster.getCluster());
+        service.addDependency(cluster);
+
+        app.synth();
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+PARA FAZER DEPLOY DO RDS COM SENHA TUDO MAIS
+cdk deploy --parameters Rds:senha=12345678 Rds
+========================================================================================================================================
+Chegou o momento de configurarmos a nossa aplicação para conectá-la ao banco de dados que subimos no RDS
+vamos fazer isso na class de serviço
+
+package com.myorg;
+
+import software.amazon.awscdk.Fn;
+import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.ecs.Cluster;
+import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.patterns.ApplicationLoadBalancedFargateService;
+import software.amazon.awscdk.services.ecs.patterns.ApplicationLoadBalancedTaskImageOptions;
+import software.constructs.Construct;
+
+import java.util.HashMap;
+import java.util.Map;
+// import software.amazon.awscdk.Duration;
+// import software.amazon.awscdk.services.sqs.Queue;
+
+public class AluraServiceStack extends Stack {
+    public AluraServiceStack(final Construct scope, final String id,final Cluster cluster) {
+        this(scope, id, null,cluster);
+    }
+
+    public AluraServiceStack(final Construct scope, final String id, final StackProps props,final Cluster cluster) {
+        super(scope, id, props);
+        Map<String,String> auth = new HashMap<>();
+        auth.put("SPRING_DATASOURCE_URL", "jdbc:mysql://" + Fn.importValue( "pedidos-db-endpoint") + ":3306/alurafood-pedidos?createDatabaseIfNotExist=true");
+        auth.put("SPRING_DATASOURCE_USERNAME", "admin");
+        auth.put("SPRING_DATASOURCE_PASSWORD", Fn.importValue("pedidos-db-senha"));
+
+        // Create a load-balanced Fargate service and make it public
+        ApplicationLoadBalancedFargateService.Builder.create(this, "aluraService ")
+                .cluster(cluster)           // Required
+                .cpu(512)                   // Default is 256
+                .desiredCount(1)            // Default is 1
+                .listenerPort(8080)         //a porta que vai ta escultando aplicação
+                .assignPublicIp(true)       // para conseguir acessar sua aplicação externamente
+                .taskImageOptions(
+                        ApplicationLoadBalancedTaskImageOptions.builder()
+                                .image(ContainerImage.fromRegistry("jacquelineoliveira/ola:1.0"))
+                                .containerPort(8080)    // a porta do conteiner
+                                .containerName("APP_OLAR")   // nome do conteiner
+                                .environment(auth)
+                                .build())
+                .memoryLimitMiB(1024)       // Default is 512
+                .publicLoadBalancer(true)   // Default is false
+                .build();
+    }
+}
+
+CLASS DE SERVIÇO VAI FICAR ASSIM NO FINAL OQ MUDAMOS
+.environment(auth)-> QUE FAZ REFERENCIA AO BANCO DE DADOS TIPO QUAL BANCO VAI SE CONCTAR COM QUAL ENDPOINT
+
+ Map<String,String> auth = new HashMap<>();
+        auth.put("SPRING_DATASOURCE_URL", "jdbc:mysql://" + Fn.importValue( "pedidos-db-endpoint") + ":3306/alurafood-pedidos?createDatabaseIfNotExist=true");
+        auth.put("SPRING_DATASOURCE_USERNAME", "admin");
+        auth.put("SPRING_DATASOURCE_PASSWORD", Fn.importValue("pedidos-db-senha"));
+
+
+        AQUI NOS CONFIGURA TUDO ISSO
+         Fn.importValue("pedidos-db-senha")); AQUI PARA IMPORTAR AS VALUES DO BANCO DE DADOS ONDE NOS
+         CRIAMOS E SETAMOS
+         E PORNTO FINALIZADO BASICAMENTE
+         VAMOS SO PRECISAR MUDAR APLICAÇÃO ELA PRECISA ESTA NO DOCKER HUB OU AWS ECR
+
+
+
+package com.myorg;
+
+import software.amazon.awscdk.App;
+import software.amazon.awscdk.Environment;
+import software.amazon.awscdk.StackProps;
+
+import java.util.Arrays;
+
+public class AluraAwsInfraApp {
+    public static void main(final String[] args) {
+        App app = new App();
+
+        var vpc =new AluraVpStack(app,"vpc");
+        var cluster =new AluraClusterStack(app,"cluster",vpc.getVpc());
+        cluster.addDependency(vpc);
+        var aluraRds = new AluraRDSStack(app,"RDS",vpc.getVpc());
+        aluraRds.addDependency(vpc);
+        var service = new AluraServiceStack(app,"service",cluster.getCluster());
+        service.addDependency(cluster);
+        service.addDependency(aluraRds);
+
+        app.synth();
+    }
+}
+
+mudaremos a class principal por que serviço depende do banco de dados tbm
+
+
+
+
+Bom se vc for usar ecr primeiro vc vai rer que instanciar com uma variavel padão
+var irepository = fromRepositoryName(this,"nomePadão","NOME COMO ESTA ECR");
+var irepository = fromRepositoryName(this,"REPOSITORY","img-pedidos-ms");
+
+e inves de vc usar
+ .image(ContainerImage.fromRegistry("jacquelineoliveira/ola:1.0"))
+ vc vai usar fromRepository(iReposiory)
+
+var irepository = fromRepositoryName(this,"REPOSITORY","img-pedidos-ms");
+ ApplicationLoadBalancedFargateService.Builder.create(this, "aluraService ")
+                .cluster(cluster)           // Required
+                .cpu(512)                   // Default is 256
+                .desiredCount(1)            // Default is 1
+                .listenerPort(8080)         //a porta que vai ta escultando aplicação
+                .assignPublicIp(true)       // para conseguir acessar sua aplicação externamente
+                .taskImageOptions(
+                        ApplicationLoadBalancedTaskImageOptions.builder()
+                                .image(ContainerImage.fromRepository(iReposiory))
+                                .containerPort(8080)    // a porta do conteiner
+                                .containerName("APP_OLAR")   // nome do conteiner
+                                .environment(auth)
+                                .build())
+                .memoryLimitMiB(1024)       // Default is 512
+                .publicLoadBalancer(true)   // Default is false
+                .build();
+
+                depois so fazer deploy novamente
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+package com.myorg;
+
+import software.amazon.awscdk.Fn;
+import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.Stack;
+import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.ecs.AwsLogDriverProps;
+import software.amazon.awscdk.services.ecs.Cluster;
+import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.LogDriver;
+import software.amazon.awscdk.services.ecs.patterns.ApplicationLoadBalancedFargateService;
+import software.amazon.awscdk.services.ecs.patterns.ApplicationLoadBalancedTaskImageOptions;
+import software.amazon.awscdk.services.logs.LogGroup;
+import software.constructs.Construct;
+
+import java.util.HashMap;
+import java.util.Map;
+// import software.amazon.awscdk.Duration;
+// import software.amazon.awscdk.services.sqs.Queue;
+
+public class AluraServiceStack extends Stack {
+    public AluraServiceStack(final Construct scope, final String id,final Cluster cluster) {
+        this(scope, id, null,cluster);
+    }
+
+    public AluraServiceStack(final Construct scope, final String id, final StackProps props,final Cluster cluster) {
+        super(scope, id, props);
+        Map<String,String> auth = new HashMap<>();
+        auth.put("SPRING_DATASOURCE_URL", "jdbc:mysql://" + Fn.importValue( "pedidos-db-endpoint") + ":3306/alurafood-pedidos?createDatabaseIfNotExist=true");
+        auth.put("SPRING_DATASOURCE_USERNAME", "admin");
+        auth.put("SPRING_DATASOURCE_PASSWORD", Fn.importValue("pedidos-db-senha"));
+
+        // Create a load-balanced Fargate service and make it public
+        ApplicationLoadBalancedFargateService.Builder.create(this, "aluraService ")
+                .cluster(cluster)           // Required
+                .cpu(512)                   // Default is 256
+                .desiredCount(1)            // Default is 1
+                .listenerPort(8080)         //a porta que vai ta escultando aplicação
+                .assignPublicIp(true)       // para conseguir acessar sua aplicação externamente
+                .taskImageOptions(
+                        ApplicationLoadBalancedTaskImageOptions.builder()
+                                .image(ContainerImage.fromRegistry("jacquelineoliveira/ola:1.0"))
+                                .containerPort(8080)    // a porta do conteiner
+                                .containerName("APP_OLAR")   // nome do conteiner
+                                .environment(auth)
+                                .logDriver(LogDriver.awsLogs(AwsLogDriverProps.builder()
+                                                .logGroup(LogGroup.Builder.create(this,"PedidosMsLogGroup")
+                                                        .logGroupName("PedidosMs")
+                                                        .removalPolicy(RemovalPolicy.DESTROY)
+                                                        .build())
+                                                .streamPrefix("PedidosMS")
+                                        .build()))
+                                .build())
+                .memoryLimitMiB(1024)       // Default is 512
+                .publicLoadBalancer(true)   // Default is false
+                .build();
+    }
+}
+PARA FAZER LOG PARA VER SE TIVER PROBLEMA NA APLICAÇÃO OU ALGO DO TIPO
+BASICAMENTE LOG GROUP AJUNTA TODAS AS INSTANCIAS EM LOG SO PARA VER PROBLEMA ONDE DEU ESSE PROBLEMA OU TODOS LOG DELA
+  .logDriver(LogDriver.awsLogs(AwsLogDriverProps.builder()
+                                                .logGroup(LogGroup.Builder.create(this,"PedidosMsLogGroup")
+                                                        .logGroupName("PedidosMs")
+                                                        .removalPolicy(RemovalPolicy.DESTROY)
+                                                        .build())
+                                                .streamPrefix("PedidosMS")
+                                        .build()))
+                                .build())
+
+.logGroup(LogGroup.Builder.create(this,"PedidosMsLogGroup")
+A QUAL GRUPO ELE PERTENCE  ONDE VAI VAI SER CRIADO
+.logGroupName("PedidosMsLog") QUAL VAI SER NOME DESTE LOGS
+.streamPrefix("PedidosMS") PREFIX TBM
+.removalPolicy(RemovalPolicy.DESTROY)-> Caso vc apague a stak ele apaga todos logs group para não manter log desnessesario
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+AUTO SCALING
+BASICAMENTE SE SUA APLICAÇÃO FOR CRESCENDO TIVER MUITO ACESSO PARA NÃO TER RISCO DELA FICAR SOBRE CARREGADA CRIA MAIS
+INSTANCIA PARA ENTRA OU ATE AS VEZES BANCO DE DADOS A MAIS DEPENDENDO DA CONFIGURAÇÃO
+
+  ScalableTaskCount scalableTaskCount = service.getService().autoScaleTaskCount(EnableScalingProps.builder()
+                .minCapacity(1)
+                .maxCapacity(20)
+                .build());
+
+ AQUI BASICAMENTE PARA FALAR QUANTIDADE MIN E MAX DE INSTANCIA QUE PODE TER ESSSA APLICAÇÃO
+
+         scalableTarget.scaleOnCpuUtilization("CpuScaling", CpuUtilizationScalingProps.builder()
+                 .targetUtilizationPercent(50)
+                  .scaleInCooldown(Duration.minutes(5))
+                                         .scaleOutCooldown(Duration.hours(3))
+                 .build());
+aqui basicamente dizendo a quantidade de cpu sendo ultilizada para poder abrir um nova instancia
+
+ scalableTarget.scaleOnMemoryUtilization("MemoryScaling", MemoryUtilizationScalingProps.builder()
+                .targetUtilizationPercent(50)
+                 .scaleInCooldown(Duration.minutes(5))
+                                        .scaleOutCooldown(Duration.hours(3))
+                .build());
+ aqui basicamente dizendo a quantidade de memoria sendo ultilizada para poder abrir um nova instancia
+
+
+  .scaleInCooldown(Duration.minutes(5))-> Basicamente que dizer fico 5 minutos a 50% da cpu cria nova instancia
+  .scaleOutCooldown(Duration.hours(3))-> Ficou 3 minutos a baixo de 50% apaga essa instancia
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ no final a class fica assim
+ package com.myorg;
+
+ import software.amazon.awscdk.Fn;
+ import software.amazon.awscdk.RemovalPolicy;
+ import software.amazon.awscdk.Stack;
+ import software.amazon.awscdk.StackProps;
+ import software.amazon.awscdk.services.applicationautoscaling.EnableScalingProps;
+ import software.amazon.awscdk.services.ecs.*;
+ import software.amazon.awscdk.services.ecs.patterns.ApplicationLoadBalancedFargateService;
+ import software.amazon.awscdk.services.ecs.patterns.ApplicationLoadBalancedTaskImageOptions;
+ import software.amazon.awscdk.services.logs.LogGroup;
+ import software.constructs.Construct;
+
+ import java.util.HashMap;
+ import java.util.Map;
+ // import software.amazon.awscdk.Duration;
+ // import software.amazon.awscdk.services.sqs.Queue;
+
+ public class AluraServiceStack extends Stack {
+     public AluraServiceStack(final Construct scope, final String id,final Cluster cluster) {
+         this(scope, id, null,cluster);
+     }
+
+     public AluraServiceStack(final Construct scope, final String id, final StackProps props,final Cluster cluster) {
+         super(scope, id, props);
+         Map<String,String> auth = new HashMap<>();
+         auth.put("SPRING_DATASOURCE_URL", "jdbc:mysql://" + Fn.importValue( "pedidos-db-endpoint") + ":3306/alurafood-pedidos?createDatabaseIfNotExist=true");
+         auth.put("SPRING_DATASOURCE_USERNAME", "admin");
+         auth.put("SPRING_DATASOURCE_PASSWORD", Fn.importValue("pedidos-db-senha"));
+
+         // Create a load-balanced Fargate service and make it public
+         var service =  ApplicationLoadBalancedFargateService.Builder.create(this, "aluraService ")
+                 .cluster(cluster)           // Required
+                 .cpu(512)                   // Default is 256
+                 .desiredCount(1)            // Default is 1
+                 .listenerPort(8080)         //a porta que vai ta escultando aplicação
+                 .assignPublicIp(true)       // para conseguir acessar sua aplicação externamente
+                 .taskImageOptions(
+                         ApplicationLoadBalancedTaskImageOptions.builder()
+                                 .image(ContainerImage.fromRegistry("jacquelineoliveira/ola:1.0"))
+                                 .containerPort(8080)    // a porta do conteiner
+                                 .containerName("APP_OLAR")   // nome do conteiner
+                                 .environment(auth)
+                                 .logDriver(LogDriver.awsLogs(AwsLogDriverProps.builder()
+                                         .logGroup(LogGroup.Builder.create(this,"PedidosMsLogGroup")
+                                                 .logGroupName("PedidosMsLog")
+                                                 .removalPolicy(RemovalPolicy.DESTROY)
+                                                 .build())
+                                         .streamPrefix("PedidosMS")
+                                         .build()))
+                                 .build())
+                 .memoryLimitMiB(1024)       // Default is 512
+                 .publicLoadBalancer(true)   // Default is false
+                 .build();
+         ScalableTaskCount scalableTarget = service.getService().autoScaleTaskCount(EnableScalingProps.builder()
+                 .minCapacity(1)
+                 .maxCapacity(20)
+                 .build());
+         scalableTarget.scaleOnCpuUtilization("CpuScaling", CpuUtilizationScalingProps.builder()
+                 .targetUtilizationPercent(50)
+                  .scaleInCooldown(Duration.minutes(5))
+                  .scaleOutCooldown(Duration.hours(3))
+                 .build());
+
+         scalableTarget.scaleOnMemoryUtilization("MemoryScaling", MemoryUtilizationScalingProps.builder()
+                 .targetUtilizationPercent(50)
+                  .scaleInCooldown(Duration.minutes(5))
+                  .scaleOutCooldown(Duration.hours(3))
+                 .build());
+
+
+
+
+     }
+ }
+
+
+
+
+
+

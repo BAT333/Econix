@@ -1,4 +1,4 @@
-package br.com.Veloxium.Econix.security;
+package br.com.Veloxium.Econix.infra.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -20,7 +20,15 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity security) throws Exception {
         return security.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(https->https.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authori->authori.anyRequest().permitAll())
+                .authorizeHttpRequests(
+                        authoriza->
+                                authoriza.requestMatchers(HttpMethod.GET,"/pay","/pay/*").hasRole("ADMIN")
+                                        .requestMatchers(HttpMethod.PUT,"/pay","/pay/*").hasRole("ADMIN")
+                                        .requestMatchers(HttpMethod.DELETE,"/pay","/pay/*").hasRole("ADMIN")
+                                        .requestMatchers(HttpMethod.POST,"/pay").hasRole("USER")
+                                        .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
+                                        .anyRequest().authenticated()
+                )
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
 

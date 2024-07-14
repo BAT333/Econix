@@ -1,11 +1,9 @@
 package br.com.Veloxium.Econix.domain;
 
-import br.com.Veloxium.Econix.model.DataPayDTO;
 import br.com.Veloxium.Econix.model.RegisterDataPayDTO;
 import br.com.Veloxium.Econix.model.UpdateDataPayDTO;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.sql.Update;
 
 import java.math.BigDecimal;
 

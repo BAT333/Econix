@@ -1,0 +1,44 @@
+primeiro de tudo nos tem instalar eler ou instalar img dele
+deste jeito pelo docker
+# latest RabbitMQ 3.10
+docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3.10-management
+localhost:15672 -> site para acessar
+qualquer coisa outras coisas estão aqui
+https://hub.docker.com/_/rabbitmq/
+
+senha e user padrão
+Username: guest
+Password: guest
+
+Primeiramente, vou criar uma pasta chamada rabbit e um novo arquivo chamado docker-compose.yml.
+Nele podemos colocar as informações básicas abaixo, que correspondem aos mesmos parâmetros que
+usamos ao criar o container com o comando docker run. Aqui ainda acrescentei variáveis de ambiente
+para definir um usuário e uma senha padrão, para que não seja mais possível logar com guest.
+
+
+version: "3.6"
+
+services:
+    rabbitmq:
+        image: rabbitmq:3.10-management
+        container_name: rabbitmq
+        restart: always
+        ports:
+            - 5672:5672
+            - 15672:15672
+        volumes:
+            - ./dados:/var/lib/rabbitmq/
+        environment:
+            - RABBITMQ_DEFAULT_USER=jacqueline
+            - RABBITMQ_DEFAULT_PASS=aluraCOPIAR CÓDIGO
+Com o arquivo pronto, basta digitar o comando docker-compose up para criar
+e executar o RabbitMQ automaticamente. Para finalizar, o procedimento é
+igualmente simples, bastando digitar o comando docker-compose down.
+
+docker-compose up
+
+docker-compose down
+
+
+docker-compose -f mysql-docker-compose.yml up -d
+ou esse aqui quando precisa especificar
