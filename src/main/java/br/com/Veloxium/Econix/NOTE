@@ -4,7 +4,15 @@ nem back end e nem front pode saber todos esse endereço para saber todos esse e
 para isso usa service discorver, ele vai ter toda instancias endereço de todos micros serviço que tem la
 
 
- para fazer isso vamo usar Spring cloud Netflix,
+ para fazer isso vamo usar
+ Spring cloud Netflix,
+
+
+   <dependency>
+      <groupId>org.springframework.cloud</groupId>
+      <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+    </dependency>
+
  para criar pelo spring initilizr
 
 
@@ -176,6 +184,11 @@ DEPOIS A URL DEFAULTZONE POR QUE VAI SER AI QUE VAI RECEBER REQUISUÇÃO
 eureka.client.serviceUrl.defaultZone=http://localhost:8081/eureka
 MESMA DO EUREKA
 
+#eureka.client.serviceUrl.defaultZone=http://localhost:8081/eureka
+#server.port=0
+#eureka.instance.prefer-ip-address=true
+#eureka.instance.hostname=localhost
+
 POR FIM VAMOS DEIXA EURECA MESMO DECIDIR A PORTA QUE ELE VAI USAR DETE JEITO
 server.port=0.
 -------------------------------------------------------------------------------------------------------------
@@ -184,6 +197,14 @@ server.port=0.
 
 "Gateway - Spring Cloud Routing" e "Eureka Discovery Client - Spring Cloud Discovery".
 
+ <dependency>
+      <groupId>org.springframework.cloud</groupId>
+      <artifactId>spring-cloud-starter-gateway-mvc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.cloud</groupId>
+      <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+    </dependency>
 
 CONFIGURAÇÃO
 APPLICATION.PROPERTIES
