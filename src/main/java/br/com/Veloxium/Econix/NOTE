@@ -601,7 +601,39 @@ Swagger/OpenAPI: Ativa e configura a documentação interativa das APIs.
 Rotas de Gateway: Define como as requisições devem ser roteadas do gateway para os microserviços, incluindo reescrita de caminhos para compatibilidade com documentação OpenAPI.
 Essas configurações permitem que o gateway funcione como um ponto central de entrada para sua arquitetura de microserviços, roteando solicitações e fornecendo documentação API integrada para os serviços backend.
 
+------------------------------------------------
 
+Se você deseja saber qual endereço usar para acessar um serviço ou recurso específico, aqui estão alguns pontos para ajudar a determinar o endereço correto:
+
+Serviço Eureka:
+
+O Eureka é um serviço de descoberta de serviços, e seu endereço é definido na configuração dos clientes e do próprio servidor. No exemplo que você forneceu:
+O servidor Eureka está configurado para ser acessado em http://localhost:8081/eureka.
+Serviço Gateway:
+
+O Gateway é um ponto de entrada para os microserviços e deve ser acessado na porta onde ele está configurado para rodar. Com base nas configurações:
+O Gateway está configurado para rodar em http://localhost:8082.
+Serviços Registrados no Eureka:
+
+Serviços como "employee-service" e "house-service" são registrados no Eureka e podem ser acessados via Gateway. O endereço será através do Gateway, que por sua vez consulta o Eureka para resolver o serviço.
+Por exemplo, para acessar o serviço "employee-service" através do Gateway, você pode usar:
+http://localhost:8082/employee/
+Swagger UI:
+
+Para acessar a interface do Swagger UI através do Gateway, você pode usar:
+http://localhost:8082/swagger-ui.html
+Documentação API (OpenAPI):
+
+As rotas configuradas para acessar a documentação OpenAPI dos serviços via Gateway dependem dos filtros e reescritas configuradas. Por exemplo:
+Para acessar a documentação do "employee-service" via Gateway, você pode usar:
+http://localhost:8082/v3/api-docs/employee-service
+Como Verificar os Endereços Usados:
+Para confirmar qual endereço está sendo usado ou deve ser usado, verifique os seguintes pontos:
+
+Configurações no arquivo application.properties ou application.yml: Verifique as configurações de server.port, eureka.client.serviceUrl.defaultZone, e rotas do Spring Cloud Gateway.
+Servidor Eureka Dashboard: Acesse o painel de controle do Eureka em http://localhost:8081 para ver quais serviços estão registrados e em quais endereços.
+Logs de inicialização do aplicativo: Ao iniciar o servidor ou os serviços, os logs geralmente mostram em quais portas eles estão ouvindo e os endereços configurados.
+Se você estiver tendo problemas para acessar um serviço, certifique-se de que ele está em execução e que a configuração do serviço, incluindo portas e endereços IP, está correta.
 
 
 
