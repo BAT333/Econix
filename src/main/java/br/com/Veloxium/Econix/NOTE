@@ -637,6 +637,41 @@ Se você estiver tendo problemas para acessar um serviço, certifique-se de que 
 
 
 
+As propriedades eureka.server.enable-self-preservation e eureka.server.enable-ssl são usadas para configurar o comportamento do Eureka Server em termos de preservação de instâncias e segurança. Aqui está uma explicação detalhada para cada uma:
+
+eureka.server.enable-self-preservation
+Descrição: Habilita ou desabilita o modo de preservação automática do Eureka Server.
+Valor:
+true (padrão): O Eureka Server está em modo de preservação automática, o que significa que ele tenta proteger instâncias registradas de serem removidas por engano, mesmo que não tenham se registrado recentemente. Isso é feito para evitar a remoção de instâncias que podem estar temporariamente fora do ar.
+false: Desativa o modo de preservação automática, permitindo que o Eureka Server remova instâncias que não têm feito o "heartbeat" recentemente, mesmo que isso possa levar à remoção de instâncias que podem estar fora do ar temporariamente.
+Uso Típico: O modo de preservação automática é útil em ambientes de produção onde a instabilidade temporária pode ocorrer e você não quer que o Eureka Server remova instâncias devido a uma breve perda de conectividade.
+
+Quando Desativar: Pode ser desativado para testes ou em ambientes onde você sabe que todas as instâncias estarão sempre ativas e responsivas. Desativar pode ajudar a depurar problemas com instâncias que não estão se registrando corretamente.
+
+eureka.server.enable-ssl
+Descrição: Habilita ou desabilita a criptografia SSL para comunicação com o Eureka Server.
+Valor:
+true: Ativa a criptografia SSL para todas as comunicações com o Eureka Server. Isso ajuda a garantir que as comunicações entre clientes e o servidor sejam seguras.
+false (padrão): Desativa a criptografia SSL, o que significa que a comunicação com o Eureka Server será feita em texto simples.
+Uso Típico: Habilitar SSL é recomendado para ambientes de produção para garantir que os dados transmitidos entre clientes e o Eureka Server sejam criptografados e seguros.
+
+Quando Desativar: Pode ser desativado em ambientes de desenvolvimento ou teste onde a segurança não é uma preocupação imediata, mas isso não é recomendado para ambientes de produção.
+
+Exemplo de Configuração
+Se você quiser usar SSL e permitir a preservação automática, você pode configurar o Eureka Server da seguinte forma:
+
+properties
+Copiar código
+eureka.server.enable-self-preservation=true
+eureka.server.enable-ssl=true
+Se, por outro lado, você está em um ambiente de teste e quer desativar a preservação automática e o SSL, pode configurá-lo assim:
+
+properties
+Copiar código
+eureka.server.enable-self-preservation=false
+eureka.server.enable-ssl=false
+Estas configurações devem ser ajustadas conforme as necessidades de segurança e estabilidade do seu ambiente de deployment.
+
 
 
 
