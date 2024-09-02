@@ -857,7 +857,53 @@ A reescrita de caminho é útil quando você precisa ajustar o caminho das requi
 
 
 
+---------------------------------------------------------------------------COMO CENTRALIZAR A DOCUMENTAÇÃO
+-------------AQUI AS CONFIG BASICA DOS MICRO SERVIÇO
 
+# Server Port Settings
+server.port=8083
+
+# Swagger and OpenAPI Settings
+springdoc.api-docs.enabled=true
+springdoc.swagger-ui.enabled=true
+springdoc.swagger-ui.path=/swagger-ui.html
+
+# Server Context Settings
+server.servlet.context-path=/
+
+-------------------CONFIG DO GATEWAY
+#Swagger and OpenAPI Settings
+springdoc.api-docs.enabled=true
+springdoc.swagger-ui.enabled=true
+springdoc.swagger-ui.path=/swagger-ui.html
+springdoc.enable-native-support=true
+springdoc.swagger-ui.config-url=/v3/api-docs/swagger-config
+
+#Swagger UI URLs
+springdoc.swagger-ui.urls[0].url=/v3/api-docs
+springdoc.swagger-ui.urls[0].name=service gateway API
+
+----------AQUI CONFIGURA AS URL DO MICROSERVIÇO
+springdoc.swagger-ui.urls[1].url=/aggregate/employee-service/v3/api-docs
+springdoc.swagger-ui.urls[1].name=service employee
+
+
+AQUI CRIA UMA CLASS COM
+ @Bean
+    public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
+        return builder.routes()
+                .route("employee_service", r -> r
+                        .path("/api/employee/**")
+                        .uri("http://localhost:8083"))//Microservice running on port 8083
+                .route("employee_service_swagger", r -> r
+                        .path("/aggregate/employee-service/v3/api-docs")
+                        .filters(f -> f.rewritePath("/aggregate/employee-service/(?<segment>.*)", "/${segment}"))
+                        .uri("http://localhost:8083")) //Route to Swagger JSON
+                .route("swagger_ui", r -> r
+                        .path("/swagger-ui/**")
+                        .filters(f -> f.rewritePath("/swagger-ui/(?<segment>.*)", "/${segment}"))
+                        .uri("http://localhost:8083")) //Route to Swagger UI
+-------------------PARA CONFIGURA AS URLS E QUEM PODE ACESSAR
 
 
 https://spring.io/ TODA DOCUMENTAÇÕES DO SPRING BOOT
