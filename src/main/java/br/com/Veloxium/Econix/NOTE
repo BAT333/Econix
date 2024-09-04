@@ -917,6 +917,8 @@ spring.cloud.gateway.routes[0].predicates[0]=Path=/swiggy/**
 spring.cloud.gateway.routes[0].filters[0]=AuthenticationFilter
 
 
+spring.cloud.gateway.routes[0].filters[0]=AuthenticationFilter-> AQUI É CLASSE DO FILTRO QUE CRIAMOS
+
 
 
 https://spring.io/ TODA DOCUMENTAÇÕES DO SPRING BOOT
