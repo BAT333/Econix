@@ -905,5 +905,18 @@ AQUI CRIA UMA CLASS COM
                         .uri("http://localhost:8083")) //Route to Swagger UI
 -------------------PARA CONFIGURA AS URLS E QUEM PODE ACESSAR
 
+# Configurações do Spring Cloud Gateway
+#id de indetificaçã
+spring.cloud.gateway.routes[0].id=swiggy-app
+#nome do micro serviço que vai ser redirecionado
+spring.cloud.gateway.routes[0].uri=lb://SWIGGY-APP
+#nome fantasia que sempre ser escrito esse nome vai indetificar e redirecionar para url com nome
+#do microServiço certo
+spring.cloud.gateway.routes[0].predicates[0]=Path=/swiggy/**
+#filtro de autenticação
+spring.cloud.gateway.routes[0].filters[0]=AuthenticationFilter
+
+
+
 
 https://spring.io/ TODA DOCUMENTAÇÕES DO SPRING BOOT
