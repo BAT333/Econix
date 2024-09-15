@@ -921,4 +921,85 @@ spring.cloud.gateway.routes[0].filters[0]=AuthenticationFilter-> AQUI É CLASSE 
 
 
 
+
+
+
+
+
+
+
+
+--------------------------------para verificar que veio do gateway
+
+package com.example.service.employee.config.security;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+
+import java.io.IOException;
+@Component
+
+public class GatewayFilter extends OncePerRequestFilter {
+
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+            String forwardedHeader = request.getHeader("X-Forwarded-For");
+
+            // Verifique se a requisição veio pelo Gateway
+            if (forwardedHeader == null) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied");
+                return;
+            }
+
+            filterChain.doFilter(request, response);
+    }
+}
+
+usar filter filterBefor
+e outra abordagem
+  http.csrf().disable()
+            .authorizeRequests()
+            .antMatchers("/login", "/public/**").permitAll() // Permite o login e rotas públicas
+            .anyRequest().authenticated(); // Exige autenticação para todas as outras requisições
+        return http.build();
+
+
+package com.example.service.employee.config.security;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+
+import java.io.IOException;
+@Component
+
+public class GatewayFilter extends OncePerRequestFilter {
+
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+            String forwardedHeader = request.getHeader("X-Forwarded-For");
+        String requestURI = request.getRequestURI();
+        if (requestURI.contains("public") || requestURI.startsWith("/swagger-ui") || requestURI.startsWith("/v3/api-docs")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied");
+        filterChain.doFilter(request, response);
+
+            filterChain.doFilter(request, response);
+    }
+}
+
+
 https://spring.io/ TODA DOCUMENTAÇÕES DO SPRING BOOT
