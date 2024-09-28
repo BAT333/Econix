@@ -65,3 +65,14 @@ logback.xml
             <artifactId>logback-classic</artifactId>
             <version>1.2.6</version>
         </dependency>
+
+        Ferramentas mais usadas no mercado:
+        Logback + SLF4J para aplicações Java.
+        Elastic Stack (ELK) ou Grafana Loki para centralizar e visualizar logs.
+        Fluentd para coleta de logs distribuídos.
+        AWS CloudWatch Logs para soluções baseadas na AWS.
+        Boas práticas:
+        Definir níveis de log corretamente.
+        Usar logs estruturados (JSON).
+        Implementar rotação de logs.
+        Centralizar e correlacionar logs em sistemas distribuídos.
