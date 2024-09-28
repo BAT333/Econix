@@ -6,6 +6,7 @@ import br.com.Veloxium.Econix.model.RegisterDataPayDTO;
 import br.com.Veloxium.Econix.model.UpdateDataPayDTO;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
-
+@Slf4j
 @RestController
 @RequestMapping("/pay")
 @SecurityRequirement(name = "bearer-key")
@@ -23,6 +24,7 @@ public class PayController {
     private PayService service;
     @GetMapping
     public ResponseEntity<Page<DataPayDTO>> allPay(@PageableDefault Pageable pageable){
+        log.info("lista");
         return ResponseEntity.ok(this.service.findall(pageable));
     }
     @GetMapping("{id}")
